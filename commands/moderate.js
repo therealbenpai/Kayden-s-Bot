@@ -55,26 +55,21 @@ module.exports =
                             )
                     )
             )
-            .addSubcommandGroup(group =>
-                group
+            .addSubcommand(subcommand =>
+                subcommand
                     .setName('kick')
-                    .setDescription('Kick-related commands')
-                    .addSubcommand(subcommand =>
-                        subcommand
-                            .setName('add')
-                            .setDescription('Kick a member')
-                            .addUserOption(option =>
-                                option
-                                    .setName('member')
-                                    .setDescription('The member to kick')
-                                    .setRequired(true)
-                            )
-                            .addStringOption(option =>
-                                option
-                                    .setName('reason')
-                                    .setDescription('The reason for the kick')
-                                    .setRequired(true)
-                            )
+                    .setDescription('Kick a member')
+                    .addUserOption(option =>
+                        option
+                            .setName('member')
+                            .setDescription('The member to kick')
+                            .setRequired(true)
+                    )
+                    .addStringOption(option =>
+                        option
+                            .setName('reason')
+                            .setDescription('The reason for the kick')
+                            .setRequired(true)
                     )
             )
             .addSubcommandGroup(group =>
@@ -104,26 +99,43 @@ module.exports =
                                     .setRequired(true)
                             )
                     )
+                    .addSubcommand(subcommand =>
+                        subcommand
+                            .setName('remove')
+                            .setDescription('Unmute a member')
+                            .addUserOption(option =>
+                                option
+                                    .setName('member')
+                                    .setDescription('The member to unmute')
+                                    .setRequired(true)
+                            )
+                            .addStringOption(option =>
+                                option
+                                    .setName('reason')
+                                    .setDescription('The reason for the unmute')
+                                    .setRequired(true)
+                            )
+                    )
             ),
     )
         .setCommand(async (client, interaction) => {
             const
                 scg = interaction.options.getSubcommandGroup(),
-                sc = interaction.options.getSubcommand();
+                sc = interaction.options.getSubcommand(),
+                woops = client.embed().setTitle('Whoops!').setColor(0xd1271b),
+                member = interaction.options.getMember('member'),
+                reason = interaction.options.getString('reason');
             if (scg === 'ban') {
                 if (sc === 'add') {
-                    const user = interaction.options.getMember('member');
-                    const reason = interaction.options.getString('reason');
-                    const woops = new client.embed().setTitle('Whoops!').setColor(0xd1271b)
-                    switch (user.id) {
+                    switch (member.id) {
                         case interaction.user.id:
                             return await interaction.reply({ embeds: [woops.setDescription("You can't ban yourself!")] });
                         case client.user.id:
                             return await interaction.reply({ embeds: [woops.setDescription("I can't ban myself!")] });
                         default:
                             try {
-                                await interaction.guild.members.ban(user, { reason: reason });
-                                await interaction.reply({ embeds: [client.embed().setTitle('Success!').setDescription(`${user} was successfully banned.\n\n**Reason**\n${reason}`)] })
+                                await interaction.guild.members.ban(member, { reason: reason });
+                                await interaction.reply({ embeds: [client.embed().setTitle('Success!').setDescription(`${member} was successfully banned.\n\n**Reason**\n${reason}`)] })
                             } catch (error) {
                                 await interaction.reply({ embeds: [woops.setDescription(`It seems we encountered an error:\n\`${error}\``)], ephemeral: true })
                             }
@@ -132,9 +144,7 @@ module.exports =
                     return;
                 }
                 if (sc === 'remove') {
-                    const user = client.users.cache.get(interaction.options.getString('member'));
-                    const reason = interaction.options.getString('reason');
-                    const woops = new client.embed().setTitle('Whoops!').setColor(0xd1271b)
+                    const user = interaction.options.getUser('member');
                     switch (user.id) {
                         case interaction.user.id:
                             return await interaction.reply({ embeds: [woops.setDescription("You can't unban yourself!")] });
@@ -152,19 +162,16 @@ module.exports =
                 }
                 return;
             }
-            if (scg === 'kick' && sc === 'add') {
-                const user = interaction.options.getMember('member');
-                const reason = interaction.options.getString('reason');
-                const woops = new client.embed().setTitle('Whoops!').setColor(0xd1271b)
-                switch (user.id) {
+            if (sc === 'kick') {
+                switch (member.id) {
                     case interaction.user.id:
                         return await interaction.reply({ embeds: [woops.setDescription("You can't kick yourself!")] });
                     case client.user.id:
                         return await interaction.reply({ embeds: [woops.setDescription("I can't kick myself!")] });
                     default:
                         try {
-                            await user.kick({ reason: reason });
-                            await interaction.reply({ embeds: [client.embed().setTitle('Success!').setDescription(`${user} was successfully kicked.\n\n**Reason**\n${reason}`)] })
+                            await member.kick({ reason: reason });
+                            await interaction.reply({ embeds: [client.embed().setTitle('Success!').setDescription(`${member} was successfully kicked.\n\n**Reason**\n${reason}`)] })
                         } catch (error) {
                             await interaction.reply({ embeds: [woops.setDescription(`It seems we encountered an error:\n\`${error}\``)], ephemeral: true })
                         }
@@ -172,23 +179,39 @@ module.exports =
                 return;
             }
             if (scg === 'mute' && sc === 'add') {
-                const member = interaction.options.getMember('member');
-                const durationTime = client.Utils.Time.stringToMilliseconds(interaction.options.getString('duration'));
-                const woops = new client.embed().setTitle('Whoops!').setColor(0xd1271b)
-                switch (member.id) {
-                    case interaction.user.id:
-                        return await interaction.reply({ embeds: [woops.setDescription("You can't mute yourself!")] });
-                    case client.user.id:
-                        return await interaction.reply({ embeds: [woops.setDescription("I can't mute myself!")] });
-                    default:
-                        try {
-                            await member.disableCommunicationUntil(new Date(Date.now() + durationTime));
-                            await interaction.reply({ embeds: [client.embed().setTitle('Success!').setDescription(`${member} was successfully muted for ${client.Utils.Time.elapsedTime(durationTime / 1000)}`)] })
-                        } catch (error) {
-                            await interaction.reply({ embeds: [woops.setDescription(`It seems we encountered an error:\n\`${error}\``)], ephemeral: true })
-                        }
+                if (sc === 'add') {
+                    const durationTime = client.Utils.Time.stringToMilliseconds(interaction.options.getString('duration'));
+                    switch (member.id) {
+                        case interaction.user.id:
+                            return await interaction.reply({ embeds: [woops.setDescription("You can't mute yourself!")] });
+                        case client.user.id:
+                            return await interaction.reply({ embeds: [woops.setDescription("I can't mute myself!")] });
+                        default:
+                            try {
+                                await member.disableCommunicationUntil(new Date(Date.now() + durationTime));
+                                await interaction.reply({ embeds: [client.embed().setTitle('Success!').setDescription(`${member} was successfully muted for ${client.Utils.Time.elapsedTime(durationTime / 1000)}`)] })
+                            } catch (error) {
+                                await interaction.reply({ embeds: [woops.setDescription(`It seems we encountered an error:\n\`${error}\``)], ephemeral: true })
+                            }
+                    }
+                    return;
                 }
-                return;
+                if (sc === 'remove') {
+                    switch (member.id) {
+                        case interaction.user.id:
+                            return await interaction.reply({ embeds: [woops.setDescription("You can't unmute yourself!")] });
+                        case client.user.id:
+                            return await interaction.reply({ embeds: [woops.setDescription("I can't unmute myself!")] });
+                        default:
+                            try {
+                                await member.disableCommunicationUntil(new Date(0));
+                                await interaction.reply({ embeds: [client.embed().setTitle('Success!').setDescription(`${member} was successfully unmuted.\n\n**Reason**\n${reason}`)] })
+                            } catch (error) {
+                                await interaction.reply({ embeds: [woops.setDescription(`It seems we encountered an error:\n\`${error}\``)], ephemeral: true })
+                            }
+                    }
+                    return;
+                }
             }
         })
         .setMessage(async (_message, _client) => { /* Do Stuff Here */ })

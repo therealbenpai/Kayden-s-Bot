@@ -16,11 +16,6 @@ module.exports = new Event(Events.InteractionCreate)
             client.bumpRTS('commands.slash');
             // console.dir(command, { depth: 3 });
             // console.dir(interaction.member);
-            console.dir(Array.of(
-                [!Boolean(command.requiredPerm), Boolean(interaction.guild), !interaction.member.permissions.has(command.requiredPerm)],
-                [!Boolean(command.allowedRoles), !interaction.member.roles.cache.some(({ id }) => command.allowedRoles.includes(id))],
-                [!Boolean(command.allowedUsers), !command.allowedUsers.includes(interaction.member.id)],
-            ));
             const failureReason = !Boolean(command.blockDM) &&
                 interaction.channel.isDMBased()
                 ? 1

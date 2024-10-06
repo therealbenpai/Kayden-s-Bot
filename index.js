@@ -21,7 +21,7 @@ const mainClient = new Client(
         selectMenusDir: `${__dirname}/components/selectMenus`,
         triggersDir: `${__dirname}/triggers`,
     },
-)
+);
 
 mainClient.Statuses
     .set(1, { type: ActivityType.Watching, name: 'the community server' })
@@ -29,7 +29,7 @@ mainClient.Statuses
     .set(3, { type: ActivityType.Playing, name: 'with the community' });
 
 mainClient
-    .setBranding({ footer: { text: 'Made with ❤️ by the Pronouns.page' }, color: 0x2F3136 });
+    .setBranding({ footer: { text: 'Made with ❤️ by the FemDevs' }, color: 0x2F3136 });
 
 const client = Object.assign(mainClient, { /** @type {_fuseType} */ Fuse });
 
